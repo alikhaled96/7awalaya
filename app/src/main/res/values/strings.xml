@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">7awalaya</string>
     <string name="title_activity_map">Map</string>
+    <string-array name="Categories">
+        <item>select category</item>
+        <item>Food</item>
+        <item>Entertainment</item>
+        <item>Supermarket/ba2al</item>
+        <item>Pharmacy</item>
+        <item>Koshk</item>
+        <item>Mekaneeky</item>
+        <item>Kahraba2y</item>
+        <item>Petrol Station/Banzeena</item>
+    </string-array>
 </resources>

@@ -5,20 +5,26 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.SharedPreferencesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
-Button test;
+Button signup;
     Intent i;
+    EditText edph,eduser;
+    String phone,username;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        test = (Button) findViewById(R.id.buttontest);
+        signup = (Button) findViewById(R.id.buttontest);
+        eduser = (EditText) findViewById(R.id.untext);
+        edph = (EditText) findViewById(R.id.phtxt);
         i=new Intent(MainActivity.this , MapActivity.class);
         ActivityCompat.requestPermissions(MainActivity.this,
                 new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
@@ -38,9 +44,11 @@ Button test;
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    test.setOnClickListener(new View.OnClickListener() {
+                    signup.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
+
+
                             startActivity(i);
 
                         }
