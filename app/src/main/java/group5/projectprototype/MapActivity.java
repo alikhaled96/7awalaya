@@ -70,7 +70,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         tagdata = (EditText) findViewById(R.id.tagset);
         tagdata.setEnabled(false);
         btclear = (Button) findViewById(R.id.btclear);
-        btclear.setEnabled(true);
+        btclear.setVisibility(View.GONE);
         sp = (Spinner) findViewById(R.id.spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.Categories, android.R.layout.simple_spinner_item);
@@ -90,6 +90,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     tagtext = tagselect + "," ;
                 }
                 tagdata.setText(tagdata.getText()+tagtext);
+                btclear.setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -134,7 +135,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
 
                 tagdata.setText("");
-
+                //btclear.setVisibility(View.GONE);
             }
         });
     }
@@ -154,6 +155,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
+        mMap.getUiSettings().setZoomControlsEnabled(true);
 
 
         // Add a marker in Sydney and move the camera
@@ -172,7 +174,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             // position on right bottom
             layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
             layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-            layoutParams.setMargins(0, 0, 60,60);
+            layoutParams.setMargins(0, 0, 0,300);
         }
 
 
