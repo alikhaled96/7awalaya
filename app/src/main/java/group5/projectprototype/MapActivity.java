@@ -31,6 +31,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     View mapView;
     EditText et1;
     Spinner sp;
+    int selection;
     Button btdrop;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +58,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 //et1.setText(parentView.getItemAtPosition(position).toString());
-
+                selection = position;
 
             }
 
@@ -69,6 +70,34 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
         });
 
+        switch (selection){
+            case 0:
+                //first one "select category" do nothing
+                break;
+            case 1: //food
+
+                break;
+            case 2: //entertainment
+
+                break;
+            case 3: //supermarket
+
+                break;
+            case 4: //pharmacy
+
+                break;
+            case 5: //koshk
+
+                break;
+            case 6: //mekaneeky
+
+                break;
+            case 7: //kahraba2y
+
+                break;
+
+
+        }
     }
 
 
@@ -89,9 +118,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
 
         // Add a marker in Sydney and move the camera
-       // LatLng sydney = new LatLng(-34, 151);
-       // mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-       // mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        LatLng sydney = new LatLng(30.017941, 31.500269);
+        //,
+       mMap.addMarker(new MarkerOptions().position(sydney).title("AUC"));
+       //mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
 
         if (mapView != null &&
                 mapView.findViewById(Integer.parseInt("1")) != null) {
