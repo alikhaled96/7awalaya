@@ -2,12 +2,14 @@ package group5.projectprototype;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -15,6 +17,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -25,14 +28,29 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.Iterator;
+
+import javax.net.ssl.HttpsURLConnection;
+
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback,GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener {
 
     private GoogleMap mMap;
     View mapView;
-    EditText et1;
+    EditText et1,ettag,tagdata;
     Spinner sp;
     int selection;
-    Button btdrop;
+    Button btclear;
+    String tagtext,tagselect;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,10 +61,16 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mapFragment.getMapAsync(this);
         mapView = mapFragment.getView();
         mapFragment.getMapAsync(this);
-
+        tagtext="";
+        tagselect="";
         et1 = (EditText) findViewById(R.id.search1);
         et1.setEnabled(false);
-
+        ettag = (EditText) findViewById(R.id.tag);
+        ettag.setEnabled(false);
+        tagdata = (EditText) findViewById(R.id.tagset);
+        tagdata.setEnabled(false);
+        btclear = (Button) findViewById(R.id.btclear);
+        btclear.setEnabled(true);
         sp = (Spinner) findViewById(R.id.spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.Categories, android.R.layout.simple_spinner_item);
@@ -58,8 +82,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 //et1.setText(parentView.getItemAtPosition(position).toString());
+                tagselect = parentView.getItemAtPosition(position).toString();
                 selection = position;
+                if(tagtext.contains(tagselect) || tagselect.equals("select category")){
 
+                }else {
+                    tagtext = tagselect + "," ;
+                }
+                tagdata.setText(tagdata.getText()+tagtext);
             }
 
             @Override
@@ -70,7 +100,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
         });
 
-        switch (selection){
+        switch (selection) {
             case 0:
                 //first one "select category" do nothing
                 break;
@@ -98,6 +128,15 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
 
         }
+        btclear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
+                tagdata.setText("");
+
+            }
+        });
     }
 
 
@@ -154,5 +193,97 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
+    }
+
+    public class SendPostRequest1 extends AsyncTask<String, Void, String> {
+
+        protected void onPreExecute(){}
+
+        protected String doInBackground(String... arg0) {
+
+            try {
+
+                URL url1 = new URL("http://188.226.144.157/group8/getlocation.php?type"); // PUT URL HERE
+
+                JSONObject postDataParams = new JSONObject();
+                //postDataParams.put("Name", );
+                //postDataParams.put("Phone1",);
+                Log.e("params",postDataParams.toString());
+                HttpURLConnection conn = (HttpURLConnection) url1.openConnection();
+                conn.setReadTimeout(15000 /* milliseconds */);
+                conn.setConnectTimeout(15000 /* milliseconds */);
+                conn.setRequestMethod("GET");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(os, "UTF-8"));
+                writer.write(getPostDataString1(postDataParams));
+
+                writer.flush();
+                writer.close();
+                os.close();
+
+                int responseCode=conn.getResponseCode();
+
+                if (responseCode == HttpsURLConnection.HTTP_OK) {
+
+                    BufferedReader in=new BufferedReader(new
+                            InputStreamReader(
+                            conn.getInputStream()));
+
+                    StringBuffer sb = new StringBuffer("");
+                    String line="";
+
+                    while((line = in.readLine()) != null) {
+
+                        sb.append(line);
+                        break;
+                    }
+
+                    in.close();
+                    return sb.toString();
+
+                }
+                else {
+                    return new String("false : "+responseCode);
+                }
+            }
+            catch(Exception e){
+                return new String("Exception: " + e.getMessage());
+            }
+
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            Toast.makeText(getApplicationContext(), result,
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public String getPostDataString1(JSONObject params) throws Exception {
+
+        StringBuilder result = new StringBuilder();
+        boolean first = true;
+
+        Iterator<String> itr = params.keys();
+
+        while(itr.hasNext()){
+
+            String key= itr.next();
+            Object value = params.get(key);
+
+            if (first)
+                first = false;
+            else
+                result.append("&");
+
+            result.append(URLEncoder.encode(key, "UTF-8"));
+            result.append("=");
+            result.append(URLEncoder.encode(value.toString(), "UTF-8"));
+
+        }
+        return result.toString();
     }
 }
