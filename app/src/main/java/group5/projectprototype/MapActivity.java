@@ -1,8 +1,15 @@
 package group5.projectprototype;
 
 import android.Manifest;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
@@ -54,6 +61,12 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     int selection;
     Button btclear;
     String tagtext,tagselect;
+    //quick array for testing
+    Double []longt = {30.020051,30.024194,30.023785,30.016541};
+    Double []lat = {31.496374,31.495923,31.501448,31.502938};
+    String []names = {"test1","test2","test3","test4"};
+    int []types = {1,1,7,7};
+    int typeselected;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -109,10 +122,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 //first one "select category" do nothing
                 break;
             case 1: //food
-
+                      typeselected=1;
                 break;
             case 2: //entertainment
-
+                typeselected=2;
                 break;
             case 3: //supermarket
 
@@ -161,20 +174,31 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
-
         LatLng sydney = new LatLng(30.017941, 31.500269);
         mMap.addMarker(new MarkerOptions().position(sydney).title("AUC"));
 
+        final LocationManager manager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
 
+        if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
+            MapActivity.displayPromptForEnablingGPS(this);
 
-        //List<Marker> markers = new ArrayList<Marker>();
+        } else {
+            Toast.makeText(getApplicationContext(),"GPS is ready",
+                    Toast.LENGTH_LONG).show();
+        }
 
-        //for (size of array) {
-          //  Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(geo1Dub, geo2Dub))); //...
-            //markers.add(marker);
+        List<Marker> markers = new ArrayList<Marker>();
 
+        for (int i=0;i<types.length;i++) {
+            for (int j=0 ; j<5 ; j++) {
+                if (types[i]==j) {
+                    Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(longt[i], lat[i])).title(names[i])); //...
+                    markers.add(marker);
+                }
+            }
+        }
 // after loop:
-      //  markers.size();
+       markers.size();
 
 
 
@@ -301,5 +325,32 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
         }
         return result.toString();
+    }
+
+    public static void displayPromptForEnablingGPS(
+            final Activity activity)
+    {
+        final AlertDialog.Builder builder =
+                new AlertDialog.Builder(activity);
+        final String action = Settings.ACTION_LOCATION_SOURCE_SETTINGS;
+        final String message = "Enable either GPS or any other location"
+                + " service to find current location.  Click OK to go to"
+                + " location services settings to let you do so.";
+
+        builder.setMessage(message)
+                .setPositiveButton("OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface d, int id) {
+                                activity.startActivity(new Intent(action));
+                                d.dismiss();
+                            }
+                        })
+                .setNegativeButton("Cancel",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface d, int id) {
+                                d.cancel();
+                            }
+                        });
+        builder.create().show();
     }
 }
