@@ -26,6 +26,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONObject;
@@ -38,7 +39,9 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -154,15 +157,26 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
 
-        // Add a marker in Sydney and move the camera
         LatLng sydney = new LatLng(30.017941, 31.500269);
-        //,
-       mMap.addMarker(new MarkerOptions().position(sydney).title("AUC"));
-       //mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        mMap.addMarker(new MarkerOptions().position(sydney).title("AUC"));
+
+
+
+        //List<Marker> markers = new ArrayList<Marker>();
+
+        //for (size of array) {
+          //  Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(geo1Dub, geo2Dub))); //...
+            //markers.add(marker);
+
+// after loop:
+      //  markers.size();
+
+
 
         if (mapView != null &&
                 mapView.findViewById(Integer.parseInt("1")) != null) {
