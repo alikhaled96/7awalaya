@@ -24,6 +24,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -35,6 +36,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.Task;
 
 import org.json.JSONObject;
 
@@ -47,10 +49,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
+
+import static group5.projectprototype.R.id.map;
 
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback,GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener {
 
@@ -67,13 +72,19 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     String []names = {"test1","test2","test3","test4"};
     int []types = {1,1,7,7};
     int typeselected;
+
+    List<Double> longt_list = new ArrayList<>(Arrays.asList(30.020051,30.024194,30.023785,30.016541));
+    List<Double> lat_list = new ArrayList<>(Arrays.asList(31.496374,31.495923,31.501448,31.502938));
+    List<String> names_list = new ArrayList<>(Arrays.asList("test1","test2","test3","test4"));
+    List<Integer> type_list = new ArrayList<>(Arrays.asList(1,1,2,7));
+    List<Integer> typeSelected_list = new ArrayList<>(Arrays.asList(1));
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
+                .findFragmentById(map);
         mapFragment.getMapAsync(this);
         mapView = mapFragment.getView();
         mapFragment.getMapAsync(this);
@@ -122,16 +133,19 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 //first one "select category" do nothing
                 break;
             case 1: //food
-                      typeselected=1;
+                typeSelected_list.add(1);
+
                 break;
             case 2: //entertainment
-                typeselected=2;
+                typeSelected_list.add(2);
+
                 break;
             case 3: //supermarket
+                typeSelected_list.add(3);
 
                 break;
             case 4: //pharmacy
-
+                //typeSelected_list.add(4);
                 break;
             case 5: //koshk
 
@@ -145,38 +159,19 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
 
         }
-        btclear.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
 
-
-                tagdata.setText("");
-                //btclear.setVisibility(View.GONE);
-            }
-        });
     }
 
 
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
         LatLng sydney = new LatLng(30.017941, 31.500269);
         mMap.addMarker(new MarkerOptions().position(sydney).title("AUC"));
-
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, 10f));
         final LocationManager manager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
 
         if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
@@ -187,18 +182,19 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     Toast.LENGTH_LONG).show();
         }
 
-        List<Marker> markers = new ArrayList<Marker>();
 
-        for (int i=0;i<types.length;i++) {
-            for (int j=0 ; j<5 ; j++) {
-                if (types[i]==j) {
-                    Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(longt[i], lat[i])).title(names[i])); //...
-                    markers.add(marker);
-                }
+        btclear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                typeSelected_list.clear();
+                tagdata.setText("");
+                mMap.clear();
+                //btclear.setVisibility(View.GONE);
             }
-        }
+        });
 // after loop:
-       markers.size();
+
 
 
 
@@ -215,6 +211,46 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             layoutParams.setMargins(0, 0, 0,300);
         }
 
+
+      //  List<Marker> markers = new ArrayList<Marker>();
+
+        for (int i=0;i<type_list.size();i++) {
+
+            //if(type_list.get(i)==x) {
+
+            Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(longt_list.get(i), lat_list.get(i))).title(names_list.get(i)));
+           // mMap.set
+           // markers.add(marker);
+
+            // }
+
+        }
+       // markers.size();
+
+
+
+        googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+
+            @Override
+            public void onInfoWindowClick(Marker arg0) {
+                //PUT ACTIVITY FOR INFO HERE
+                Toast.makeText(getApplicationContext(),"Stop clicking me im not ready yet",
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+
+        mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+            @Override
+            public void onMapLongClick(LatLng latLng) {
+
+                Toast.makeText(getApplicationContext(),"time to make a new marker",
+                        Toast.LENGTH_LONG).show();
+                //googleMap.addMarker(new MarkerOptions()
+                       // .position(latLng)
+                        //.title("Your marker title")
+                        //.snippet("Your marker snippet"));
+            }
+        });
 
 
     }
@@ -353,4 +389,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                         });
         builder.create().show();
     }
+
+
+
 }
