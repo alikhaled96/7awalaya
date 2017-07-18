@@ -59,7 +59,7 @@
         android:layout_height="50dp"
         android:ems="10"
         android:inputType="textPersonName"
-        android:hint="Quick Info"
+        android:hint="Address and Info"
         android:layout_marginTop="8dp"
         app:layout_constraintTop_toBottomOf="@+id/Phoneselect"
         android:layout_marginLeft="8dp"
@@ -82,11 +82,11 @@
 
     <TextView
         android:id="@+id/textView"
-        android:layout_width="119dp"
+        android:layout_width="150dp"
         android:layout_height="31dp"
         android:textSize="20dp"
         android:textAlignment="center"
-        android:text="USER INFO"
+        android:text="MARKER INFO"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginTop="131dp"
         android:layout_marginRight="8dp"

@@ -16,16 +16,20 @@ import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -33,55 +37,76 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.Task;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.HttpsURLConnection;
 
 import static group5.projectprototype.R.id.map;
 
+
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback,GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener {
 
     private GoogleMap mMap;
+    Intent i;
     View mapView;
     EditText et1,ettag,tagdata;
     Spinner sp;
     int selection;
+    int dialog;
     Button btclear;
-    String tagtext,tagselect;
-    //quick array for testing
-    Double []longt = {30.020051,30.024194,30.023785,30.016541};
-    Double []lat = {31.496374,31.495923,31.501448,31.502938};
-    String []names = {"test1","test2","test3","test4"};
-    int []types = {1,1,7,7};
-    int typeselected;
+    String tagtext,tagselect,responseFromserver;
+    String MarkerName,Markerinfo,MarkerRatingCount,MarkerAVGRating;
+    private String[] mPlanetTitles;
+    private DrawerLayout mDrawerLayout;
+    private ListView mDrawerList;
+    JSONObject obj ;
+    JSONArray resultarray ;
+    //json testing
+    List<Marker> markers = new ArrayList<Marker>();
+    ArrayList<Integer> est_id = new ArrayList<Integer>();
+    ArrayList<String> est_name = new ArrayList<String>();
+    ArrayList<String> est_city = new ArrayList<String>();
+    ArrayList<String> est_address = new ArrayList<String>();
+    ArrayList<Double> est_lat = new ArrayList<Double>();
+    ArrayList<Double> est_longt = new ArrayList<Double>();
+    ArrayList<Integer> est_reviewcount= new ArrayList<Integer>();
+    ArrayList<Double> est_avgrating = new ArrayList<Double>();
+    ArrayList<Integer> est_confirmed = new ArrayList<Integer>();
+    ArrayList<String> est_image = new ArrayList<String>();
 
-    List<Double> longt_list = new ArrayList<>(Arrays.asList(30.020051,30.024194,30.023785,30.016541));
-    List<Double> lat_list = new ArrayList<>(Arrays.asList(31.496374,31.495923,31.501448,31.502938));
-    List<String> names_list = new ArrayList<>(Arrays.asList("test1","test2","test3","test4"));
-    List<Integer> type_list = new ArrayList<>(Arrays.asList(1,1,2,7));
-    List<Integer> typeSelected_list = new ArrayList<>(Arrays.asList(1));
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
+       // new GetMethodDemo().execute("http://188.226.144.157/group8/7awlya/get_establishments.php?id=1&email=email_1@email.com&type=Pharmacy");
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(map);
@@ -92,17 +117,18 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         tagselect="";
         et1 = (EditText) findViewById(R.id.search1);
         et1.setEnabled(false);
-        ettag = (EditText) findViewById(R.id.tag);
-        ettag.setEnabled(false);
+       // ettag = (EditText) findViewById(R.id.tag);
+//        ettag.setEnabled(false);
         tagdata = (EditText) findViewById(R.id.tagset);
         tagdata.setEnabled(false);
-        btclear = (Button) findViewById(R.id.btclear);
-        btclear.setVisibility(View.GONE);
+        //btclear = (Button) findViewById(R.id.btclear);
+       // btclear.setVisibility(View.GONE);
         sp = (Spinner) findViewById(R.id.spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.Categories, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         sp.setAdapter(adapter);
+
 
 
         sp.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -117,7 +143,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     tagtext = tagselect + "," ;
                 }
                 tagdata.setText(tagdata.getText()+tagtext);
-                btclear.setVisibility(View.VISIBLE);
+//                btclear.setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -128,104 +154,35 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
         });
 
-        switch (selection) {
-            case 0:
-                //first one "select category" do nothing
-                break;
-            case 1: //food
-                typeSelected_list.add(1);
-
-                break;
-            case 2: //entertainment
-                typeSelected_list.add(2);
-
-                break;
-            case 3: //supermarket
-                typeSelected_list.add(3);
-
-                break;
-            case 4: //pharmacy
-                //typeSelected_list.add(4);
-                break;
-            case 5: //koshk
-
-                break;
-            case 6: //mekaneeky
-
-                break;
-            case 7: //kahraba2y
-
-                break;
-
-
-        }
 
     }
 
 
+
+
     @Override
-    public void onMapReady(GoogleMap googleMap) {
+    public void onMapReady(final GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
         LatLng sydney = new LatLng(30.017941, 31.500269);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("AUC"));
+        mMap.addMarker(new MarkerOptions().position(sydney).title("AUC").snippet("i hate this place"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, 10f));
         final LocationManager manager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
 
         if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
-            MapActivity.displayPromptForEnablingGPS(this);
+            MapActivity.displayPromptForEnablingGPS(this,true);
 
         } else {
-            Toast.makeText(getApplicationContext(),"GPS is ready",
+            Toast.makeText(getApplicationContext(),"GPS ready",
                     Toast.LENGTH_LONG).show();
         }
 
 
-        btclear.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                typeSelected_list.clear();
-                tagdata.setText("");
-                mMap.clear();
-                //btclear.setVisibility(View.GONE);
-            }
-        });
-// after loop:
+        new Getrequest().execute("http://188.226.144.157/group8/7awlya/get_establishments.php?id=1&email=email_1@email.com&type=Pharmacy");
 
 
-
-
-        if (mapView != null &&
-                mapView.findViewById(Integer.parseInt("1")) != null) {
-            // Get the button view
-            View locationButton = ((View) mapView.findViewById(Integer.parseInt("1")).getParent()).findViewById(Integer.parseInt("2"));
-            // and next place it, on bottom right (as Google Maps app)
-            RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams)
-                    locationButton.getLayoutParams();
-            // position on right bottom
-            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
-            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-            layoutParams.setMargins(0, 0, 0,300);
-        }
-
-
-      //  List<Marker> markers = new ArrayList<Marker>();
-
-        for (int i=0;i<type_list.size();i++) {
-
-            //if(type_list.get(i)==x) {
-
-            Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(longt_list.get(i), lat_list.get(i))).title(names_list.get(i)));
-           // mMap.set
-           // markers.add(marker);
-
-            // }
-
-        }
-       // markers.size();
 
 
 
@@ -234,8 +191,18 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
             @Override
             public void onInfoWindowClick(Marker arg0) {
                 //PUT ACTIVITY FOR INFO HERE
-                Toast.makeText(getApplicationContext(),"Stop clicking me im not ready yet",
-                        Toast.LENGTH_LONG).show();
+                i=new Intent(MapActivity.this , MarkerPage.class);
+                //int test = arg0.getId();
+                MarkerName = arg0.getTag().toString();
+                Markerinfo = arg0.getSnippet().toString();
+                int s = est_name.indexOf(MarkerName);
+                MarkerAVGRating = est_avgrating.get(s).toString();
+
+                i.putExtra("MARKER_NAME",MarkerName);
+                i.putExtra("MARKER_ADDRESS",Markerinfo);
+                i.putExtra("MARKER_AVG",MarkerAVGRating);
+
+                startActivity(i);
             }
         });
 
@@ -245,10 +212,17 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
                 Toast.makeText(getApplicationContext(),"time to make a new marker",
                         Toast.LENGTH_LONG).show();
-                //googleMap.addMarker(new MarkerOptions()
-                       // .position(latLng)
-                        //.title("Your marker title")
-                        //.snippet("Your marker snippet"));
+                i=new Intent(MapActivity.this , MarkerInfoActivity.class);
+                double lat = latLng.latitude;
+                double longt = latLng.longitude;
+                i.putExtra("LAT",lat);
+                i.putExtra("LONGT",longt);
+                startActivity(i);
+
+                mMap.addMarker(new MarkerOptions()
+                       .position(latLng)
+                        .title(MarkerName)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
             }
         });
 
@@ -271,125 +245,142 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     }
 
-    public class SendPostRequest1 extends AsyncTask<String, Void, String> {
+    public interface OnTaskDoneListener {
+        void onTaskDone(String responseData);
 
-        protected void onPreExecute(){}
+        void onError();
+    }
 
-        protected String doInBackground(String... arg0) {
+    public class Getrequest extends AsyncTask<String , Void ,String> {
+     String server_response;
+
+        @Override
+        protected String doInBackground(String... strings) {
+
+            URL url;
+            HttpURLConnection urlConnection = null;
 
             try {
+                url = new URL(strings[0]);
+                urlConnection = (HttpURLConnection) url.openConnection();
 
-                URL url1 = new URL("http://188.226.144.157/group8/getlocation.php?type"); // PUT URL HERE
+                int responseCode = urlConnection.getResponseCode();
 
-                JSONObject postDataParams = new JSONObject();
-                //postDataParams.put("Name", );
-                //postDataParams.put("Phone1",);
-                Log.e("params",postDataParams.toString());
-                HttpURLConnection conn = (HttpURLConnection) url1.openConnection();
-                conn.setReadTimeout(15000 /* milliseconds */);
-                conn.setConnectTimeout(15000 /* milliseconds */);
-                conn.setRequestMethod("GET");
-                conn.setDoInput(true);
-                conn.setDoOutput(true);
-                OutputStream os = conn.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(
-                        new OutputStreamWriter(os, "UTF-8"));
-                writer.write(getPostDataString1(postDataParams));
-
-                writer.flush();
-                writer.close();
-                os.close();
-
-                int responseCode=conn.getResponseCode();
-
-                if (responseCode == HttpsURLConnection.HTTP_OK) {
-
-                    BufferedReader in=new BufferedReader(new
-                            InputStreamReader(
-                            conn.getInputStream()));
-
-                    StringBuffer sb = new StringBuffer("");
-                    String line="";
-
-                    while((line = in.readLine()) != null) {
-
-                        sb.append(line);
-                        break;
-                    }
-
-                    in.close();
-                    return sb.toString();
+                if(responseCode == HttpURLConnection.HTTP_OK){
+                    server_response = readStream(urlConnection.getInputStream());
 
                 }
-                else {
-                    return new String("false : "+responseCode);
-                }
-            }
-            catch(Exception e){
-                return new String("Exception: " + e.getMessage());
-            }
 
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            //urlConnection.disconnect();
+            return null;
         }
 
         @Override
-        protected void onPostExecute(String result) {
-            Toast.makeText(getApplicationContext(), result,
-                    Toast.LENGTH_LONG).show();
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            processResult(server_response);
+        }
+
+    }
+    private void processResult(String test)
+    {
+        try {
+            obj = new JSONObject(test);
+            resultarray = obj.getJSONArray("results");
+            for(int i=0 ; i<resultarray.length() ; i++){
+                est_id.add(Integer.parseInt(resultarray.getJSONObject(i).get("id").toString()));
+                est_name.add(resultarray.getJSONObject(i).get("name").toString());
+                est_city.add(resultarray.getJSONObject(i).get("city").toString());
+                est_address.add(resultarray.getJSONObject(i).get("address").toString());
+                est_lat.add(Double.parseDouble(resultarray.getJSONObject(i).get("lat").toString()));
+                est_longt.add(Double.parseDouble(resultarray.getJSONObject(i).get("lng").toString()));
+                est_reviewcount.add(Integer.parseInt(resultarray.getJSONObject(i).get("reviews_count").toString()));
+                est_avgrating.add(Double.parseDouble(resultarray.getJSONObject(i).get("lat").toString()));
+                est_confirmed.add(Integer.parseInt(resultarray.getJSONObject(i).get("confirmed").toString()));
+                //est_image.add(i,resultarray.getJSONObject(i).getInt(""));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        for (int i=0;i<est_name.size();i++) {
+
+            Marker marker = mMap.addMarker(new MarkerOptions().position(new LatLng(est_lat.get(i), est_longt.get(i))).title(est_name.get(i)).snippet(est_address.get(i)));
+
+            markers.add(marker);
+
+
         }
     }
+// Converting InputStream to String
 
-    public String getPostDataString1(JSONObject params) throws Exception {
-
-        StringBuilder result = new StringBuilder();
-        boolean first = true;
-
-        Iterator<String> itr = params.keys();
-
-        while(itr.hasNext()){
-
-            String key= itr.next();
-            Object value = params.get(key);
-
-            if (first)
-                first = false;
-            else
-                result.append("&");
-
-            result.append(URLEncoder.encode(key, "UTF-8"));
-            result.append("=");
-            result.append(URLEncoder.encode(value.toString(), "UTF-8"));
-
+    public String readStream(InputStream in) {
+        BufferedReader reader = null;
+        StringBuffer response = new StringBuffer();
+        try {
+            reader = new BufferedReader(new InputStreamReader(in));
+            String line = "";
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
-        return result.toString();
+        return response.toString();
     }
+
+
+
+
 
     public static void displayPromptForEnablingGPS(
-            final Activity activity)
+            final Activity activity,boolean d)
     {
-        final AlertDialog.Builder builder =
-                new AlertDialog.Builder(activity);
-        final String action = Settings.ACTION_LOCATION_SOURCE_SETTINGS;
-        final String message = "Enable either GPS or any other location"
-                + " service to find current location.  Click OK to go to"
-                + " location services settings to let you do so.";
+        if(d) {
+            final AlertDialog.Builder builder =
+                    new AlertDialog.Builder(activity);
+            final String action = Settings.ACTION_LOCATION_SOURCE_SETTINGS;
+            final String message = "Enable either GPS or any other location"
+                    + " service to find current location.  Click OK to go to"
+                    + " location services settings to let you do so.";
 
-        builder.setMessage(message)
-                .setPositiveButton("OK",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface d, int id) {
-                                activity.startActivity(new Intent(action));
-                                d.dismiss();
-                            }
-                        })
-                .setNegativeButton("Cancel",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface d, int id) {
-                                d.cancel();
-                            }
-                        });
-        builder.create().show();
+            builder.setMessage(message)
+                    .setPositiveButton("OK",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface d, int id) {
+                                    activity.startActivity(new Intent(action));
+                                    d.dismiss();
+                                }
+                            })
+                    .setNegativeButton("Cancel",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface d, int id) {
+                                    d.cancel();
+                                }
+                            });
+            builder.create().show();
+
+        }
+
     }
+
+
+
 
 
 
 }
+
+
