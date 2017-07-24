@@ -7,12 +7,15 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Criteria;
+import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -28,6 +31,7 @@ import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -69,23 +73,21 @@ import javax.net.ssl.HttpsURLConnection;
 import static group5.projectprototype.R.id.map;
 
 
-public class MapActivity extends FragmentActivity implements OnMapReadyCallback,GoogleApiClient.ConnectionCallbacks,GoogleApiClient.OnConnectionFailedListener {
+public class MapActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private GoogleMap mMap;
     Intent i;
     View mapView;
-    EditText et1,ettag,tagdata;
+    EditText et1, etcategory;
     Spinner sp;
     int selection;
     int dialog;
     Button btclear;
-    String tagtext,tagselect,responseFromserver;
-    String MarkerName,Markerinfo,MarkerRatingCount,MarkerAVGRating;
-    private String[] mPlanetTitles;
-    private DrawerLayout mDrawerLayout;
-    private ListView mDrawerList;
-    JSONObject obj ;
-    JSONArray resultarray ;
+    String tagtext, tagselect, selectedCategory;
+    String MarkerName, Markerinfo, MarkerRatingCount, MarkerAVGRating, MarkerID;
+    JSONObject obj;
+    JSONArray resultarray;
+
     //json testing
     List<Marker> markers = new ArrayList<Marker>();
     ArrayList<Integer> est_id = new ArrayList<Integer>();
@@ -94,71 +96,37 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     ArrayList<String> est_address = new ArrayList<String>();
     ArrayList<Double> est_lat = new ArrayList<Double>();
     ArrayList<Double> est_longt = new ArrayList<Double>();
-    ArrayList<Integer> est_reviewcount= new ArrayList<Integer>();
+    ArrayList<Integer> est_reviewcount = new ArrayList<Integer>();
     ArrayList<Double> est_avgrating = new ArrayList<Double>();
     ArrayList<Integer> est_confirmed = new ArrayList<Integer>();
     ArrayList<String> est_image = new ArrayList<String>();
 
-
-
+    public double latitude;
+    public double longitude;
+    public LocationManager locationManager;
+    public Criteria criteria;
+    public String bestProvider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
-       // new GetMethodDemo().execute("http://188.226.144.157/group8/7awlya/get_establishments.php?id=1&email=email_1@email.com&type=Pharmacy");
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(map);
         mapFragment.getMapAsync(this);
         mapView = mapFragment.getView();
         mapFragment.getMapAsync(this);
-        tagtext="";
-        tagselect="";
+        Intent i1 = getIntent();
+        selectedCategory = i1.getStringExtra("SELECTED_CATEGORY");
+        tagtext = "";
+        tagselect = "";
         et1 = (EditText) findViewById(R.id.search1);
         et1.setEnabled(false);
-       // ettag = (EditText) findViewById(R.id.tag);
-//        ettag.setEnabled(false);
-        tagdata = (EditText) findViewById(R.id.tagset);
-        tagdata.setEnabled(false);
-        //btclear = (Button) findViewById(R.id.btclear);
-       // btclear.setVisibility(View.GONE);
-        sp = (Spinner) findViewById(R.id.spinner);
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-                R.array.Categories, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        sp.setAdapter(adapter);
-
-
-
-        sp.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                //et1.setText(parentView.getItemAtPosition(position).toString());
-                tagselect = parentView.getItemAtPosition(position).toString();
-                selection = position;
-                if(tagtext.contains(tagselect) || tagselect.equals("select category")){
-
-                }else {
-                    tagtext = tagselect + "," ;
-                }
-                tagdata.setText(tagdata.getText()+tagtext);
-//                btclear.setVisibility(View.VISIBLE);
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parentView) {
-                et1.setText("");
-
-            }
-
-        });
-
+        etcategory = (EditText) findViewById(R.id.categoryselected);
+        etcategory.setEnabled(false);
+        etcategory.setText(selectedCategory);
 
     }
-
-
-
 
     @Override
     public void onMapReady(final GoogleMap googleMap) {
@@ -166,21 +134,25 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
-        LatLng sydney = new LatLng(30.017941, 31.500269);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("AUC").snippet("i hate this place"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, 10f));
         final LocationManager manager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
 
         if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
             MapActivity.displayPromptForEnablingGPS(this,true);
-
         } else {
             Toast.makeText(getApplicationContext(),"GPS ready",
                     Toast.LENGTH_LONG).show();
         }
 
+        View locationButton = ((View) mapView.findViewById(1).getParent()).findViewById(2);
 
-        new Getrequest().execute("http://188.226.144.157/group8/7awlya/get_establishments.php?id=1&email=email_1@email.com&type=Pharmacy");
+        // and next place it, for exemple, on bottom right (as Google Maps app)
+        RelativeLayout.LayoutParams rlp = (RelativeLayout.LayoutParams) locationButton.getLayoutParams();
+        // position on right bottom
+        rlp.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
+        rlp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+        rlp.setMargins(200, 200, 40, 400);
+
+        new Getrequest().execute("http://188.226.144.157/group8/7awlya/get_establishments.php?id=1&email=email_1@email.com&type="+selectedCategory);
 
 
 
@@ -189,19 +161,20 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
 
             @Override
-            public void onInfoWindowClick(Marker arg0) {
+            public void onInfoWindowClick(Marker marker) {
                 //PUT ACTIVITY FOR INFO HERE
                 i=new Intent(MapActivity.this , MarkerPage.class);
-                //int test = arg0.getId();
-                MarkerName = arg0.getTag().toString();
-                Markerinfo = arg0.getSnippet().toString();
-                int s = est_name.indexOf(MarkerName);
-                MarkerAVGRating = est_avgrating.get(s).toString();
-
+                MarkerName = marker.getTitle();
+                int index = est_name.indexOf(MarkerName);
+                Markerinfo = est_address.get(index);
+                MarkerAVGRating = est_avgrating.get(index).toString();
+                MarkerID = est_id.get(index).toString();
                 i.putExtra("MARKER_NAME",MarkerName);
                 i.putExtra("MARKER_ADDRESS",Markerinfo);
                 i.putExtra("MARKER_AVG",MarkerAVGRating);
-
+             //   i.putExtra("USERPASS" , );
+              //  i.putExtra("USEREMAIL" ,);
+                i.putExtra("MARKER_ID", MarkerID);
                 startActivity(i);
             }
         });
@@ -217,18 +190,27 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 double longt = latLng.longitude;
                 i.putExtra("LAT",lat);
                 i.putExtra("LONGT",longt);
-                startActivity(i);
+                startActivityForResult(i,4);
 
-                mMap.addMarker(new MarkerOptions()
-                       .position(latLng)
-                        .title(MarkerName)
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
             }
         });
 
 
     }
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch(requestCode) {
+            case (MarkerInfoActivity.RESULT_OK) : {
+                if (resultCode == Activity.RESULT_OK) {
+                    MarkerName = data.getStringExtra("RESULTNAME");
+                    Markerinfo = data.getStringExtra("RESULTINFO");
 
+                }
+                break;
+            }
+        }
+    }
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
@@ -244,6 +226,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
     }
+
 
     public interface OnTaskDoneListener {
         void onTaskDone(String responseData);
@@ -300,7 +283,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 est_lat.add(Double.parseDouble(resultarray.getJSONObject(i).get("lat").toString()));
                 est_longt.add(Double.parseDouble(resultarray.getJSONObject(i).get("lng").toString()));
                 est_reviewcount.add(Integer.parseInt(resultarray.getJSONObject(i).get("reviews_count").toString()));
-                est_avgrating.add(Double.parseDouble(resultarray.getJSONObject(i).get("lat").toString()));
+                est_avgrating.add(Double.parseDouble(resultarray.getJSONObject(i).get("avg_rating").toString()));
                 est_confirmed.add(Integer.parseInt(resultarray.getJSONObject(i).get("confirmed").toString()));
                 //est_image.add(i,resultarray.getJSONObject(i).getInt(""));
             }

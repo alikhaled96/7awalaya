@@ -1,7 +1,9 @@
 package group5.projectprototype;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
@@ -18,6 +20,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -36,46 +39,25 @@ public class MainActivity extends AppCompatActivity {
 Button signup;
     Intent i;
     EditText etpass,etdispname,etemail;
-    String username,pass,dispname,email;
-    //GoogleApiClient mGoogleApiClient;
+    String dispname,email,userID;
     private static final int RC_SIGN_IN = 9001;
-   // private GoogleApiClient mGoogleApiClient;
+
     private ProgressDialog mProgressDialog;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         signup = (Button) findViewById(R.id.buttontest);
-        etpass = (EditText) findViewById(R.id.passtext);
+
         etdispname = (EditText) findViewById(R.id.dispnametext);
         etemail= (EditText) findViewById(R.id.emailtxt);
-        etpass.setTransformationMethod(new AsteriskPasswordTransformationMethod());
-        i=new Intent(MainActivity.this , MapActivity.class);
+
+        i=new Intent(MainActivity.this , NavigationActivity.class);
 
         ActivityCompat.requestPermissions(MainActivity.this,
                 new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                 1);
-//
-//        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-//                .requestEmail()
-//                .build();
 
-//        mGoogleApiClient = new GoogleApiClient.Builder(this)
-//                .enableAutoManage(MainActivity.this , 1);
-//                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
-//                .build();
-//
-//
-//
-//        findViewById(R.id.sign_in_button).setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//
-//                Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
-//                startActivityForResult(signInIntent, RC_SIGN_IN);
-//            }
-//
-//        });
 
     }
 
@@ -93,26 +75,29 @@ Button signup;
                     signup.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
+
                             if (etemail.getText().toString().isEmpty()){
                                 Toast.makeText(getApplicationContext(),"Please Add your email",
                                         Toast.LENGTH_LONG).show();
                             } else if (etdispname.getText().toString().isEmpty()){
-                                Toast.makeText(getApplicationContext(),"Please Add a password",
-                                        Toast.LENGTH_LONG).show();
-                            } else if (etpass.getText().toString().isEmpty()){
                                 Toast.makeText(getApplicationContext(), "Please Add a Display name",
                                         Toast.LENGTH_LONG).show();
                             } else {
-                                pass = etpass.getText().toString();
+
                                 dispname = etdispname.getText().toString();
                                 email = etemail.getText().toString();
                                 new SendPostRequest().execute();
 
+                                getSharedPreferences("PREFERENCE1", MODE_PRIVATE).edit()
+                                        .putString("USEREMAIL",email).commit();
+                                getSharedPreferences("PREFERENCE2", MODE_PRIVATE).edit()
+                                        .putString("USERID",userID).commit();
+                                getSharedPreferences("PREFERENCE3", MODE_PRIVATE).edit()
+                                        .putString("DISPNAME",dispname).commit();
+                                startActivity(i);
                             }
-                            startActivity(i);
+                        }});
 
-                        }
-                    });
                 } else {
 
                     // permission denied, boo! Disable the
@@ -134,14 +119,12 @@ Button signup;
 
             try {
 
-                URL url = new URL("http://188.226.144.157/group8/7awlya/register.php?"); // here is your URL path
+                URL url = new URL("http://188.226.144.157/group8/7awlya/register.php"); // here is your URL path
                 JSONObject postDataParams = new JSONObject();
-                postDataParams.put("pw",pass );
+                postDataParams.put("pw","pw08" );
                 postDataParams.put("display_name",dispname);
                 postDataParams.put("email",email);
-                postDataParams.put("email",email);
-                postDataParams.put("extern_id","0");
-                postDataParams.put("extern_type","SignUP");
+
 
                 Log.e("params",postDataParams.toString());
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -192,9 +175,15 @@ Button signup;
 
         @Override
         protected void onPostExecute(String result) {
-            Toast.makeText(getApplicationContext(), result,
-                    Toast.LENGTH_LONG).show();
+
             Log.e("output" , result);
+            try {
+                JSONObject obj = new JSONObject(result);
+                userID = obj.get("results").toString();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
         }
     }
 

@@ -18,10 +18,9 @@
         <item>Satellite View</item>
         <item>Settings</item>
     </string-array>
-    <string name="title_activity_navigation">NavigationActivity</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
+    <string name="title_activity_navigation">7awalaya</string>
+    <string name="title_home">7awalaya</string>
+
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>

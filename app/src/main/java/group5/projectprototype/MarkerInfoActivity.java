@@ -50,15 +50,13 @@ Spinner spselect;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_marker_info);
-        new Getrequest1().execute("188.226.144.157/group8/7awlya/get_types.php?id=1&email=email_1@email.com");
+        new Getrequest1().execute("http://188.226.144.157/group8/7awlya/get_types.php?id=1&email=email_1@email.com");
 
         spselect= (Spinner) findViewById(R.id.spinnerselect);
 
         submit = (Button) findViewById(R.id.Submit);
         nameet = (EditText) findViewById(R.id.Nameselect);
-        phet = (EditText) findViewById(R.id.Phoneselect);
         quickinfoet = (EditText) findViewById(R.id.quickinfo);
-        Intent marker = getIntent();
         Bundle extras = getIntent().getExtras();
         lat = extras.getDouble("LAT");
         longt = extras.getDouble("LONGT");
@@ -81,8 +79,8 @@ Spinner spselect;
                 if(nameet.getText().toString().isEmpty()){
                     Toast.makeText(getApplicationContext(),"Please Add a Name ",
                             Toast.LENGTH_LONG).show();
-                } else if (phet.getText().toString().isEmpty()){
-                    Toast.makeText(getApplicationContext(),"Please Add a Phone Number",
+                } else if (quickinfoet.getText().toString().isEmpty()){
+                    Toast.makeText(getApplicationContext(),"Please Add an Address",
                             Toast.LENGTH_LONG).show();
                 } else if (selected_category=="Select Category"){
                     Toast.makeText(getApplicationContext(),"Please Select a Category",
@@ -90,31 +88,21 @@ Spinner spselect;
                 } else {
 
                     Name = nameet.getText().toString();
-                    Phone = phet.getText().toString();
                     quickInfo = quickinfoet.getText().toString();
+                    new SendPostRequest().execute();
 
-                    Intent data = new Intent();
-                    data.putExtra("MARKERNAME", Name);
-                    //data.putExtra("n2", disp.getText().toString());
-                    setResult(RESULT_OK, data);
-                    //startActivity(i);
+                    Intent resultIntent = new Intent();
+                    resultIntent.putExtra("RESULTNAME",Name);
+                    resultIntent.putExtra("RESULTINFO",quickInfo);
+                    setResult(MarkerInfoActivity.RESULT_OK, resultIntent);
                     finish();
+
                 }
 
             }
         });
     }
 
-/*
-   "pw": "pw09",
-    "id": "99",
-    “email” : “user99@email.com”,
-    “est_name” : “Am Ahmed”,
-    “est_type” : “Koshk”,
-    “est_addr” : “9 share3 kaza”,
-    “est_lat” : “123.11”,
-    “est_lng” : “-99.2”
-  */
     //API WORK
     public class Getrequest1 extends AsyncTask<String , Void ,String> {
         String server_response1;
@@ -200,5 +188,107 @@ Spinner spselect;
         return response.toString();
     }
 
+
+    //API WORK
+    public class SendPostRequest extends AsyncTask<String, Void, String> {
+
+        protected void onPreExecute(){}
+
+        protected String doInBackground(String... arg0) {
+
+            try {
+
+                URL url = new URL("http://188.226.144.157/group8/7awlya/add_establishment.php"); // here is your URL path
+                Double test1 = Math.round (lat * 100000.0) / 100000.0;
+                Double test2 = Math.round (longt * 100000.0) / 100000.0;
+                JSONObject postDataParams = new JSONObject();
+                postDataParams.put("pw","pw08");
+                postDataParams.put("id","1");
+                postDataParams.put("email","email_1@email.com");
+                postDataParams.put("est_name",Name);
+                postDataParams.put("est_type",selected_category);
+                postDataParams.put("est_addr",quickInfo);
+                postDataParams.put("est_lat",String.valueOf(test1));
+                postDataParams.put("est_lng",String.valueOf(test2));
+
+                Log.e("params",postDataParams.toString());
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout(15000 /* milliseconds */);
+                conn.setConnectTimeout(15000 /* milliseconds */);
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(os, "UTF-8"));
+                writer.write(getPostDataString(postDataParams));
+
+                writer.flush();
+                writer.close();
+                os.close();
+
+                int responseCode=conn.getResponseCode();
+
+                if (responseCode == HttpsURLConnection.HTTP_OK) {
+
+                    BufferedReader in=new BufferedReader(new
+                            InputStreamReader(
+                            conn.getInputStream()));
+
+                    StringBuffer sb = new StringBuffer("");
+                    String line="";
+
+                    while((line = in.readLine()) != null) {
+
+                        sb.append(line);
+                        break;
+                    }
+
+                    in.close();
+                    return sb.toString();
+
+                }
+                else {
+                    return new String("false : "+responseCode);
+                }
+            }
+            catch(Exception e){
+                return new String("Exception: " + e.getMessage());
+            }
+
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            Toast.makeText(getApplicationContext(), "you can find your marker in the general category",
+                    Toast.LENGTH_LONG).show();
+            Log.e("output" , result);
+        }
+    }
+
+    public String getPostDataString(JSONObject params) throws Exception {
+
+        StringBuilder result = new StringBuilder();
+        boolean first = true;
+
+        Iterator<String> itr = params.keys();
+
+        while(itr.hasNext()){
+
+            String key= itr.next();
+            Object value = params.get(key);
+
+            if (first)
+                first = false;
+            else
+                result.append("&");
+
+            result.append(URLEncoder.encode(key, "UTF-8"));
+            result.append("=");
+            result.append(URLEncoder.encode(value.toString(), "UTF-8"));
+
+        }
+        return result.toString();
+    }
 
 }
